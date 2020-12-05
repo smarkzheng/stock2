@@ -120,55 +120,53 @@ def check_sell(row,df_SP500):
 while True:    
     # code below will execute everyday at 9:00 AM
     my_market = market()
-    # if my_market.status == 'closed':
-    #     print('trader bot shuting down...')
-    # else:
-    print('trader bot starting up...')
-    
-    my_portfolio = portfolio()     #   open the portfolio
-    my_portfolio.update()
-    
-    while my_market.get_status()=='open' and (my_portfolio.n_lines > 1):
-        time.sleep(5*60)   #   frequency of checking the sell signal is set to 2 minutes
-        print('checking sell signal...')
-        df_SP500 = pd.read_csv('strategy_table.csv')
-        df_SP500.set_index(['Symbol'],inplace=True)
-        ls_cand = my_portfolio.details.iloc[1:].apply(check_sell,args=(df_SP500,),axis=1)
-        ls_cand = ls_cand[ls_cand==True]        
-        if (len(ls_cand) == 0):
-            print('sell signal not detected')
-            my_portfolio.update()
-            print('portfolio value:{:.2f}'.format(my_portfolio.total_value))
-        else:
-            for cand in ls_cand.index:
-                my_portfolio.sell(cand)
-                
-    if my_market.get_status() == 'open':
-        t_check_buy = datetime.datetime.today().replace(hour=15,minute=0,second=0,microsecond=0)
-        time.sleep((t_check_buy - datetime.datetime.today()).seconds)
-        print('start to check buy signal...')
-        df_SP500 = pd.read_csv('strategy_table.csv')
-        df_SP500.set_index(['Symbol'],inplace=True)
-        check_buy_start = time.time()
-        df_check_buy = df_SP500.apply(check_buy,axis=1)
-        check_buy_end = time.time()
-        print('checking buy signal took:',check_buy_end - check_buy_start,'seconds')
-        cand_name = df_SP500[df_check_buy].sort_values(by=['Signal Avg. Gain %'],ascending=False).iloc[0].name
-        cand_prospect = df_SP500.loc[cand_name]['Signal Avg. Gain %']
-        print('symbol:',cand_name,'prospect: {:.2f}%'.format(cand_prospect))
-        my_portfolio.buy(cand_name)
+    if my_market.status == 'closed':
+        print('trader bot shuting down...')
+    else:
+        print('trader bot starting up...')
         
-    try:
-        my_portfolio.details.to_csv('portfolio_'+str(my_market.time.year)+'-'+
-                                  str(my_market.time.month)+'-'+
-                                  str(my_market.time.day)+'.csv')
-    except:
-        pass
-
-    my_portfolio.details.to_csv('portfolio.csv')
-    print('trader bot shutting down...')
+        my_portfolio = portfolio()     #   open the portfolio
+        my_portfolio.update()
+        
+        while my_market.get_status()=='open' and (my_portfolio.n_lines > 1):
+            time.sleep(5*60)   #   frequency of checking the sell signal is set to 2 minutes
+            print('checking sell signal...')
+            df_SP500 = pd.read_csv('strategy_table.csv')
+            df_SP500.set_index(['Symbol'],inplace=True)
+            ls_cand = my_portfolio.details.iloc[1:].apply(check_sell,args=(df_SP500,),axis=1)
+            ls_cand = ls_cand[ls_cand==True]        
+            if (len(ls_cand) == 0):
+                print('sell signal not detected')
+                my_portfolio.update()
+                print('portfolio value:{:.2f}'.format(my_portfolio.total_value))
+            else:
+                for cand in ls_cand.index:
+                    my_portfolio.sell(cand)
+                    
+        if my_market.get_status() == 'open':
+            t_check_buy = datetime.datetime.today().replace(hour=15,minute=0,second=0,microsecond=0)
+            time.sleep((t_check_buy - datetime.datetime.today()).seconds)
+            print('start to check buy signal...')
+            df_SP500 = pd.read_csv('strategy_table.csv')
+            df_SP500.set_index(['Symbol'],inplace=True)
+            check_buy_start = time.time()
+            df_check_buy = df_SP500.apply(check_buy,axis=1)
+            check_buy_end = time.time()
+            print('checking buy signal took:',check_buy_end - check_buy_start,'seconds')
+            cand_name = df_SP500[df_check_buy].sort_values(by=['Signal Avg. Gain %'],ascending=False).iloc[0].name
+            cand_prospect = df_SP500.loc[cand_name]['Signal Avg. Gain %']
+            print('symbol:',cand_name,'prospect: {:.2f}%'.format(cand_prospect))
+            my_portfolio.buy(cand_name)
+            
+        try:
+            my_portfolio.details.to_csv('portfolio_'+str(my_market.time.year)+'-'+
+                                      str(my_market.time.month)+'-'+
+                                      str(my_market.time.day)+'.csv')
+        except:
+            pass
     
-    #-------------------------------------------------------------------------
+        my_portfolio.details.to_csv('portfolio.csv')
+        print('trader bot shutting down...')
         
     t_next_run = datetime.datetime.today().replace(hour=9,minute=0,second=0,microsecond=0)
     t_next_run += datetime.timedelta(days=1)
